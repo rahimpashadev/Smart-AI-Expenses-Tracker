@@ -1,0 +1,14 @@
+FinSight AI - Run Instructions
+
+Windows Backend:
+1. Open terminal
+2. cd Backend
+3. py -m pip install -r requirements.txt
+4. py -m uvicorn app:app --reload
+
+Frontend:
+Open index.html with Live Server
+or serve the root folder using any static server.
+
+Important:
+Keep backend terminal open while using the project.

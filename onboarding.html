@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding - Smart AI Expenses Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen p-6">
+
+<div class="bg-white p-10 rounded shadow-md w-full max-w-lg">
+    <h2 class="text-2xl font-bold mb-6 text-center">Welcome! Let's set up your budget</h2>
+    <form id="onboardingForm" class="space-y-4" onsubmit="saveOnboarding(event)">
+        <div>
+            <label class="block mb-1 font-medium">Monthly Salary/Income (PKR)</label>
+            <input id="salary" type="number" placeholder="e.g., 100000" class="w-full p-2 border rounded" required>
+        </div>
+
+        <div>
+            <label class="block mb-1 font-medium">City/Location</label>
+            <input id="city" type="text" placeholder="e.g., Lahore" class="w-full p-2 border rounded" required>
+        </div>
+
+        <div>
+            <label class="block mb-1 font-medium">Living Type</label>
+            <select id="livingType" class="w-full p-2 border rounded" required>
+                <option value="">Select</option>
+                <option value="Hostel">Hostel</option>
+                <option value="Family Home">Family Home</option>
+                <option value="Rented House">Rented House</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block mb-1 font-medium">Family Size</label>
+            <select id="familySize" class="w-full p-2 border rounded" required>
+                <option value="">Select</option>
+                <option value="Single">Single</option>
+                <option value="Small Family">Small Family</option>
+                <option value="Large Family">Large Family</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block mb-1 font-medium">Transport Mode</label>
+            <select id="transportMode" class="w-full p-2 border rounded" required>
+                <option value="">Select</option>
+                <option value="Car">Car</option>
+                <option value="Bike">Bike</option>
+                <option value="Public Transport">Public Transport</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block mb-1 font-medium">Additional Scenarios/Assets</label>
+            <textarea id="additionalInfo" placeholder="e.g., I have 3 cars, I pay for help, etc." class="w-full p-2 border rounded" rows="2"></textarea>
+            <p class="text-[10px] text-gray-500 mt-1">Mention things like multiple vehicles to adjust your budget automatically.</p>
+        </div>
+
+        <button type="submit" class="bg-blue-600 text-white w-full p-2 rounded hover:bg-blue-700">Submit & Go to Dashboard</button>
+    </form>
+</div>
+
+<script src="js_main.js"></script>
+<script>
+if (requireAuth()) {
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.onboarding_completed || currentUser.onboardingCompleted) {
+        window.location.href = 'dashboard.html';
+    }
+}
+</script>
+</body>
+</html>

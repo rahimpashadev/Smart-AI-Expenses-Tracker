@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Smart Expense Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --bg: #f3f4f6; --card: #ffffff; --text: #111827; --muted: #6b7280; --nav: #1f2937; }
+    .dark { --bg: #0f172a; --card: #1e293b; --text: #ffffff; --muted: #94a3b8; --nav: #0f172a; }
+    body { background-color: var(--bg); color: var(--text); transition: background-color 0.3s, color 0.3s; }
+    .card { background-color: var(--card); color: var(--text); border: 1px solid rgba(0,0,0,0.1); }
+    .dark .card { border-color: rgba(255,255,255,0.1); }
+    input, select, textarea { color: inherit !important; background-color: rgba(0,0,0,0.03) !important; }
+    .dark input, .dark select, .dark textarea { background-color: rgba(255,255,255,0.05) !important; color: white !important; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <script src="js_main.js"></script>
+  
+  <nav class="bg-gray-900 text-white p-4 shadow-lg flex justify-between items-center">
+    <div class="flex items-center gap-2">
+        <span class="text-xl">⚙️</span>
+        <h1 class="text-xl font-black uppercase tracking-tight">Smart AI Expenses Tracker Settings</h1>
+    </div>
+    <div class="flex gap-2">
+      <a href="dashboard.html" class="bg-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition">Back to Dashboard</a>
+      <button onclick="logout()" class="bg-red-600/20 text-red-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-600 hover:text-white transition">Logout</button>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto p-6 space-y-8">
+    <!-- 1. HISTORY SECTION -->
+    <section class="card bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-2xl border-2 border-blue-500 relative overflow-hidden">
+        <h2 class="text-2xl font-black text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-2">📂 History & Analysis</h2>
+        <div id="performanceBanner" class="mb-8 p-6 rounded-2xl bg-blue-50 dark:bg-slate-900/50 border border-blue-100 flex items-start gap-4">
+            <div class="text-4xl">📊</div>
+            <div>
+                <h4 class="font-black text-blue-800 dark:text-blue-300 text-lg uppercase" id="perfStatus">Analyzing Data...</h4>
+                <p class="text-sm text-blue-600 dark:text-blue-400 italic" id="perfInsight">Syncing with history...</p>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <tbody id="historyBody" class="text-sm font-medium"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 2. PROFILE SECTION -->
+    <section class="card bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-xl">
+        <h2 class="text-2xl font-black mb-6">Profile Details</h2>
+        <form id="profileForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label class="block text-xs font-black uppercase text-gray-500 tracking-widest">Full Name</label>
+                <input id="p_name" type="text" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-black uppercase text-gray-500 tracking-widest">Age</label>
+                <input id="p_age" type="number" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-black uppercase text-gray-500 tracking-widest">Monthly Salary (PKR)</label>
+                <input id="p_salary" type="number" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-black uppercase text-gray-500 tracking-widest">City</label>
+                <input id="p_city" type="text" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-black uppercase text-gray-500 tracking-widest">Living Type</label>
+                <select id="p_living" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white">
+                    <option value="Hostel">Hostel</option>
+                    <option value="Family Home" selected>Family Home</option>
+                    <option value="Rented House">Rented House</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-black uppercase text-gray-500 tracking-widest">Family Size</label>
+                <select id="p_family" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white">
+                    <option value="Single" selected>Single</option>
+                    <option value="Small Family">Small Family</option>
+                    <option value="Large Family">Large Family</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="block text-xs font-black uppercase text-gray-500 tracking-widest">Transport Mode</label>
+                <select id="p_transport" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white">
+                    <option value="Car" selected>Car</option>
+                    <option value="Bike">Bike</option>
+                    <option value="Public Transport">Public Transport</option>
+                </select>
+            </div>
+            <div class="md:col-span-2 space-y-2">
+                <label class="block text-xs font-black uppercase text-gray-500 tracking-widest">Additional Scenarios (Assets etc.)</label>
+                <textarea id="p_additional" class="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white" rows="3" placeholder="e.g. 3 cars"></textarea>
+            </div>
+            <div class="md:col-span-2">
+                <button type="button" onclick="localSaveProfile()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black px-10 py-4 rounded-xl shadow-lg transition transform hover:-translate-y-0.5">
+                    Save Profile Changes
+                </button>
+            </div>
+        </form>
+    </section>
+  </main>
+
+  <script>
+    const user = getCurrentUser();
+    
+    async function refreshPageData() {
+        if (!user) return;
+        try {
+            const resp = await fetch(`${BACKEND_URL}/dashboard-summary?email=${encodeURIComponent(user.email)}`);
+            const data = await resp.json();
+            if (data.user) {
+                document.getElementById("p_name").value = data.user.name || "";
+                document.getElementById("p_age").value = data.user.age || "";
+                document.getElementById("p_salary").value = data.user.salary || "";
+                document.getElementById("p_city").value = data.user.city || "";
+                document.getElementById("p_living").value = data.user.living_type || "Family Home";
+                document.getElementById("p_family").value = data.user.family_size || "Single";
+                document.getElementById("p_transport").value = data.user.transport_mode || "Car";
+                document.getElementById("p_additional").value = data.user.additional_info || "";
+                
+                // Update local storage too
+                const newUser = {...user, name: data.user.name};
+                setCurrentUser(newUser);
+            }
+        } catch (e) { console.error("Load Error:", e); }
+        loadHistory();
+    }
+
+    async function localSaveProfile() {
+        const payload = {
+            email: user.email,
+            name: document.getElementById("p_name").value,
+            age: document.getElementById("p_age").value,
+            salary: document.getElementById("p_salary").value,
+            city: document.getElementById("p_city").value,
+            living_type: document.getElementById("p_living").value,
+            family_size: document.getElementById("p_family").value,
+            transport_mode: document.getElementById("p_transport").value,
+            additional_info: document.getElementById("p_additional").value
+        };
+
+        try {
+            const resp = await fetch(`${BACKEND_URL}/update-profile`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                alert("Settings Saved Successfully!");
+                refreshPageData(); 
+            } else {
+                const errText = await resp.text();
+                alert("Failed to save: " + errText);
+            }
+        } catch (e) { 
+            alert("Error connecting to server. Is the backend running at " + BACKEND_URL + "?"); 
+        }
+    }
+
+    async function loadHistory() {
+        try {
+            const resp = await fetch(`${BACKEND_URL}/monthly-history?email=${encodeURIComponent(user.email)}`);
+            const data = await resp.json();
+            const body = document.getElementById("historyBody");
+            body.innerHTML = "";
+            data.history.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.className = "border-b dark:border-slate-800";
+                tr.innerHTML = `<td class="py-4 font-bold">${row.month}</td><td class="py-4">PKR ${row.total.toLocaleString()}</td>`;
+                body.appendChild(tr);
+            });
+            if (data.analysis) {
+                document.getElementById("perfStatus").innerText = data.analysis.status;
+                document.getElementById("perfInsight").innerText = data.analysis.ai_insight;
+            }
+        } catch (e) {}
+    }
+
+    refreshPageData();
+  </script>
+  <script src="theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Smart AI Expenses Tracker</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    darkBg: '#0f172a',
+                    darkCard: '#1e293b'
+                }
+            }
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+.progress {
+    background: linear-gradient(90deg, #2563eb, #7c3aed);
+    height: 100%;
+    transition: width 0.5s ease-in-out;
+}
+.ai-response-box {
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.6;
+}
+</style>
+</head>
+
+<body class="bg-gray-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+
+<script src="js_main.js"></script>
+<script>
+if (!requireAuth()) {
+    window.location.href = "login.html";
+}
+</script>
+
+<!-- Navbar -->
+<nav class="bg-blue-600 dark:bg-slate-800 text-white p-4 shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <h1 class="text-xl font-bold flex items-center gap-2">
+            📊 <span class="hidden md:inline">Smart AI Expenses Tracker</span>
+        </h1>
+        <div class="flex items-center gap-2 md:gap-3">
+            <button id="locationToggle" onclick="window.handleLocationToggle()" class="bg-blue-500 dark:bg-slate-700 px-3 py-1.5 rounded-lg text-sm hover:opacity-90 transition flex items-center gap-1">
+                📍 <span class="hidden sm:inline" id="locText">Location: Off</span>
+            </button>
+            <button id="themeToggle" class="bg-blue-500 dark:bg-slate-700 px-3 py-1.5 rounded-lg text-sm hover:opacity-90 transition">
+                ☀️ Light
+            </button>
+            <a href="settings.html" class="bg-blue-500 dark:bg-slate-700 px-3 py-1.5 rounded-lg text-sm hover:opacity-90 transition">
+                ⚙️ <span class="hidden sm:inline">Settings</span>
+            </a>
+            <button onclick="logout()" class="bg-red-500 px-3 py-1.5 rounded-lg text-sm hover:bg-red-600 transition">
+                🚪 <span class="hidden sm:inline">Logout</span>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Purchase Prompt Modal -->
+<div id="purchaseModal" class="fixed inset-0 bg-black/50 hidden z-[100] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200 dark:border-slate-700">
+        <h3 class="text-xl font-bold mb-2">🛍️ New Purchase?</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6" id="modalText"></p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Amount (PKR)</label>
+                <input id="manualAmount" type="number" placeholder="Enter amount" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">What did you buy? (Description)</label>
+                <input id="manualDescription" type="text" placeholder="e.g. Car service, Grocery, Cinema" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Category</label>
+                <select id="manualCategory" class="w-full p-3 border rounded-xl bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition">
+                    <option value="Food">Food</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Rent">Rent</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Entertainment">Entertainment</option>
+                </select>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Add your real spending here. Dashboard cards and graph will update automatically.</p>
+            <div class="flex gap-2">
+                <button onclick="submitManualExpense()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">Yes, Save</button>
+                <button onclick="closeModal()" class="flex-1 bg-gray-200 dark:bg-slate-700 py-3 rounded-xl font-bold hover:bg-gray-300 dark:hover:bg-slate-600 transition">No</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<main class="p-4 md:p-6 max-w-7xl mx-auto">
+    <!-- Overspend Alert Section -->
+    <div id="overspendAlert" class="hidden mb-8 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-900/50 p-6 rounded-3xl shadow-2xl transition-all duration-700 hover:shadow-red-500/10">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+                <h3 class="text-2xl font-black text-red-600 dark:text-red-500 flex items-center gap-3">
+                    <span class="animate-pulse">🛑</span> Budget Warning
+                </h3>
+                <p id="overspendText" class="text-gray-700 dark:text-gray-300 font-medium mt-1"></p>
+            </div>
+            <div id="overspentCategories" class="flex flex-wrap gap-2">
+                <!-- Badges will be injected here -->
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-red-100 dark:border-red-900/30">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-xl">🤖</div>
+                <h4 class="font-bold text-gray-800 dark:text-white">Smart Financial Plan</h4>
+            </div>
+            <div id="adviceContent" class="text-gray-600 dark:text-gray-300 leading-relaxed text-sm md:text-base space-y-2">
+                Generating personalized suggestions based on your profile...
+            </div>
+        </div>
+    </div>
+    <!-- Welcome Section -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div>
+            <h2 id="welcomeUser" class="text-3xl font-extrabold text-blue-600 dark:text-blue-400"></h2>
+            <p class="text-gray-600 dark:text-gray-400">Monthly budget for <span id="currentMonthYear" class="font-bold text-gray-800 dark:text-gray-200"></span></p>
+        </div>
+        <button onclick="openManualExpenseModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold transition shadow-md w-full md:w-auto">
+            + Add Expense
+        </button>
+    </div>
+
+    <!-- AI Financial Zenith Section (New Unique AI Feature) -->
+    <div class="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-2xl shadow-lg text-white relative overflow-hidden flex flex-col justify-center min-h-[160px]">
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-white/20 p-1 rounded-lg text-sm">✨</span>
+                        <h2 class="text-sm font-black uppercase tracking-widest">Financial Zenith</h2>
+                    </div>
+                    <a href="settings.html" class="text-[10px] bg-white/10 px-2 py-1 rounded-md hover:bg-white/20 transition">View Full History →</a>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="relative w-24 h-24 flex items-center justify-center shrink-0">
+                        <svg class="w-full h-full -rotate-90">
+                            <circle cx="48" cy="48" r="44" stroke="currentColor" stroke-width="6" fill="transparent" class="text-white/10"/>
+                            <circle id="healthCircle" cx="48" cy="48" r="44" stroke="currentColor" stroke-width="6" fill="transparent" stroke-dasharray="276.46" stroke-dashoffset="276.46" class="text-white transition-all duration-[1s] ease-out"/>
+                        </svg>
+                        <div class="absolute text-center">
+                            <span id="healthValue" class="text-2xl font-black">0</span>
+                            <span class="block text-[7px] uppercase font-bold text-blue-200">Zen</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 space-y-2">
+                        <h4 class="font-bold text-md" id="zenStatus">Analyzing...</h4>
+                        <div class="bg-white/10 backdrop-blur-md px-3 py-2 rounded-lg border border-white/5">
+                            <p id="zenMessage" class="text-[11px] text-blue-50 leading-tight italic">Optimizing path...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Decorative blobs -->
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-[40px]"></div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-700 flex flex-col justify-center text-center">
+            <h3 class="text-gray-400 dark:text-gray-500 font-bold uppercase text-[9px] tracking-widest mb-1">Projected Savings</h3>
+            <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 mb-2" id="forecastValue">PKR 0</div>
+            <p class="text-[10px] text-gray-400 dark:text-gray-500 leading-tight max-w-[180px] mx-auto">Estimated month-end balance.</p>
+        </div>
+    </div>
+
+    <!-- Budget Cards -->
+    <div id="budgetCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <!-- Cards will be injected by JS -->
+    </div>
+
+    <!-- Chart Section -->
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl mb-8 border border-gray-200 dark:border-slate-700">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">📈 Total Spending Comparison</h2>
+        <div class="h-[300px] w-full">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl mb-8 border border-gray-200 dark:border-slate-700">
+        <div class="flex items-center justify-between gap-3 mb-4">
+            <h2 class="text-xl font-bold flex items-center gap-2">🧾 Recent Expenses</h2>
+            <button onclick="openManualExpenseModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">Add Expense</button>
+        </div>
+        <div id="recentExpensesEmpty" class="text-sm text-gray-500 dark:text-gray-400">No expenses added yet.</div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm hidden" id="recentExpensesTable">
+                <thead>
+                    <tr class="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-slate-700">
+                        <th class="py-3 pr-4">Category</th>
+                        <th class="py-3 pr-4">Description</th>
+                        <th class="py-3 pr-4">Amount</th>
+                        <th class="py-3">Date</th>
+                    </tr>
+                </thead>
+                <tbody id="recentExpensesBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- AI Agent Section -->
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-700">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">🤖 Ask AI Financial Agent</h2>
+        <div class="space-y-4">
+            <textarea id="ai-question" 
+                class="w-full p-4 border rounded-xl bg-gray-50 dark:bg-slate-900 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition" 
+                rows="3" 
+                placeholder="How can I save more this month?"></textarea>
+            <button onclick="askAI()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold dark:bg-blue-500 dark:hover:bg-blue-600 transition w-full md:w-auto">
+                Analyze My Spending
+            </button>
+            <div id="ai-response" class="hidden ai-response-box bg-gray-50 dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-slate-700 mt-4"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+// --- Initialization ---
+const profile = getDashboardProfile();
+document.getElementById("welcomeUser").innerText = `Welcome, ${profile.name}!`;
+document.getElementById("currentMonthYear").innerText = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+// --- Location Toggle UI ---
+function updateLocationUI() {
+    const isTracking = localStorage.getItem("isLocationTracking") === "true";
+    document.getElementById("locText").innerText = `Location: ${isTracking ? 'On' : 'Off'}`;
+    document.getElementById("locationToggle").className = isTracking ? 
+        "bg-green-600 dark:bg-green-700 px-3 py-1.5 rounded-lg text-sm hover:opacity-90 transition flex items-center gap-1" :
+        "bg-blue-500 dark:bg-slate-700 px-3 py-1.5 rounded-lg text-sm hover:opacity-90 transition flex items-center gap-1";
+}
+window.handleLocationToggle = function() {
+    toggleLocationTracking();
+    updateLocationUI();
+};
+updateLocationUI();
+
+// --- Purchase Modal Logic ---
+let currentLocName = "";
+window.showPurchaseModal = function(locationName) {
+    currentLocName = locationName || "";
+    document.getElementById("modalText").innerText = locationName
+        ? `We noticed you've been at ${locationName} for a while. Did you make a purchase?`
+        : "Add a manual expense to update your monthly spending and graph.";
+    document.getElementById("purchaseModal").classList.remove("hidden");
+};
+function openManualExpenseModal() {
+    currentLocName = "";
+    document.getElementById("modalText").innerText = "Add a manual expense to update your monthly spending and graph.";
+    document.getElementById("purchaseModal").classList.remove("hidden");
+}
+window.openManualExpenseModal = openManualExpenseModal;
+function closeModal() {
+    document.getElementById("purchaseModal").classList.add("hidden");
+}
+window.closeModal = closeModal;
+async function submitManualExpense() {
+    const amount = parseInt(document.getElementById("manualAmount").value, 10);
+    const category = document.getElementById("manualCategory").value;
+    const description = document.getElementById("manualDescription").value;
+    if (!amount || amount <= 0) return alert("Please enter a valid amount");
+
+    const result = await addManualExpense(category, amount, description);
+    if (result && result.success) {
+        document.getElementById("manualAmount").value = "";
+        document.getElementById("manualDescription").value = "";
+        closeModal();
+        await loadFinancialData();
+        await loadRecentExpenses();
+    }
+}
+window.submitManualExpense = submitManualExpense;
+
+// --- Dashboard Data State ---
+const categories = ["Food", "Transport", "Rent", "Utilities", "Entertainment"];
+const budgets = { Food: 0, Transport: 0, Rent: 0, Utilities: 0, Entertainment: 0 };
+const spent = { Food: 0, Transport: 0, Rent: 0, Utilities: 0, Entertainment: 0 };
+const remaining = { Food: 0, Transport: 0, Rent: 0, Utilities: 0, Entertainment: 0 };
+
+// --- Render Budget Cards ---
+const cardsContainer = document.getElementById("budgetCards");
+categories.forEach(cat => {
+    const div = document.createElement("div");
+    div.id = `card-${cat}`;
+    div.className = "bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-md border border-gray-100 dark:border-slate-700 hover:shadow-lg transition-all hover:-translate-y-1 duration-300";
+    div.innerHTML = `
+        <div class="flex flex-col h-full">
+            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">${cat}</h3>
+            <div class="mt-2 flex items-baseline gap-1 flex-wrap">
+                <span class="text-2xl font-bold dark:text-white" id="val-${cat}">0</span>
+                <span class="text-xs text-gray-400">spent</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Budget: <span id="budget-${cat}">0</span></p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Remaining: <span id="remaining-${cat}">0</span></p>
+            <div class="mt-4 w-full bg-gray-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                <div id="bar-${cat}" class="progress w-0"></div>
+            </div>
+            <p class="mt-2 text-[10px] text-gray-400 dark:text-gray-500 font-medium text-right uppercase" id="pct-${cat}">0% Spent</p>
+        </div>
+    `;
+    cardsContainer.appendChild(div);
+});
+
+// --- Chart Setup ---
+const ctx = document.getElementById('expenseChart').getContext('2d');
+const isDark = document.documentElement.classList.contains('dark');
+const chartTextColor = isDark ? '#94a3b8' : '#64748b';
+
+const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: categories,
+        datasets: [{
+            label: 'Budget (PKR)',
+            data: categories.map(cat => budgets[cat]),
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderColor: '#3b82f6',
+            borderWidth: 1
+        }, {
+            label: 'Spent Within Budget (PKR)',
+            data: categories.map(cat => Math.min(spent[cat], budgets[cat])),
+            backgroundColor: '#10b981',
+            borderRadius: 8
+        }, {
+            label: 'Over Budget (PKR)',
+            data: categories.map(cat => spent[cat] > budgets[cat] ? spent[cat] - budgets[cat] : 0),
+            backgroundColor: '#ef4444',
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: { color: chartTextColor, font: { family: 'Inter' } }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: isDark ? '#334155' : '#e2e8f0' },
+                ticks: { color: chartTextColor }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: chartTextColor }
+            }
+        }
+    }
+});
+
+function updateCard(cat, percentage) {
+    const valEl = document.getElementById(`val-${cat}`);
+    const budgetEl = document.getElementById(`budget-${cat}`);
+    const remainingEl = document.getElementById(`remaining-${cat}`);
+    const barEl = document.getElementById(`bar-${cat}`);
+    const pctEl = document.getElementById(`pct-${cat}`);
+
+    valEl.innerText = spent[cat].toLocaleString();
+    budgetEl.innerText = budgets[cat].toLocaleString();
+    const remainingValue = Number(remaining[cat] || 0);
+    remainingEl.innerText = remainingValue < 0
+        ? `-PKR ${Math.abs(remainingValue).toLocaleString()}`
+        : `PKR ${remainingValue.toLocaleString()}`;
+    remainingEl.style.color = remainingValue < 0 ? '#ef4444' : '';
+    barEl.style.width = Math.min(100, percentage) + "%";
+    pctEl.innerText = `${percentage}% SPENT`;
+    barEl.style.background = percentage > 100 ? '#ef4444' : (percentage > 90 ? '#f59e0b' : 'linear-gradient(90deg, #2563eb, #7c3aed)');
+}
+
+// --- Dashboard Summary Fetching ---
+async function loadFinancialData() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/dashboard-summary?email=${encodeURIComponent(profile.email)}`);
+        const summary = await response.json();
+
+        if (!response.ok) {
+            throw new Error(summary.detail || 'Failed to load dashboard data');
+        }
+
+        categories.forEach(cat => {
+            budgets[cat] = summary.budget?.[cat] || 0;
+            spent[cat] = summary.spent?.[cat] || 0;
+            remaining[cat] = summary.remaining?.[cat] || 0;
+            const percentage = summary.percentage?.[cat] || 0;
+            
+            // Hide card if both budget and spent are 0 (Fix for Rent bug)
+            const cardEl = document.getElementById(`card-${cat}`);
+            if (budgets[cat] === 0 && spent[cat] === 0) {
+                cardEl.classList.add("hidden");
+            } else {
+                cardEl.classList.remove("hidden");
+                updateCard(cat, percentage);
+            }
+        });
+
+        // Update Financial Zen Score
+        const score = summary.health_score || 0;
+        const totalBudget = summary.totals.budget || 0;
+        const totalRemaining = summary.totals.remaining || 0;
+        
+        document.getElementById("healthValue").innerText = score;
+        const dashOffset = 276.46 - (276.46 * score / 100);
+        document.getElementById("healthCircle").style.strokeDashoffset = dashOffset;
+        document.getElementById("forecastValue").innerText = `PKR ${totalRemaining.toLocaleString()}`;
+
+        const zenStatus = document.getElementById("zenStatus");
+        const zenMsg = document.getElementById("zenMessage");
+        if (score >= 90) zenStatus.innerText = "Master of Zen", zenMsg.innerText = "Your financial discipline is exemplary. Your future self is smiling.";
+        else if (score >= 70) zenStatus.innerText = "Financial Harmony", zenMsg.innerText = "You are in control. Minor adjustments will lead you to complete Zen.";
+        else if (score >= 50) zenStatus.innerText = "Unstable Peace", zenMsg.innerText = "You are maintaining, but the tides are rising. Caution is advised.";
+        else zenStatus.innerText = "Spiritual Debt", zenMsg.innerHTML = "Your path is clouded. <a href='#ai-question' class='underline decoration-white/30 hover:text-white transition'>Use the AI advisor below</a> to find your way back.";
+
+        chart.data.datasets[0].data = categories.map(cat => budgets[cat]);
+        chart.data.datasets[1].data = categories.map(cat => Math.min(spent[cat], budgets[cat]));
+        chart.data.datasets[2].data = categories.map(cat => spent[cat] > budgets[cat] ? spent[cat] - budgets[cat] : 0);
+        chart.update();
+
+        // 🚨 ENHANCED OVERSPEND LOGIC
+        const totalSpent = summary.totals.spent || 0;
+        const alertBox = document.getElementById("overspendAlert");
+        const alertText = document.getElementById("overspendText");
+        const catContainer = document.getElementById("overspentCategories");
+        const adviceContent = document.getElementById("adviceContent");
+
+        if (totalSpent > totalBudget && totalBudget > 0) {
+            alertBox.classList.remove("hidden");
+            alertText.innerHTML = `You've exceeded your <b>PKR ${totalBudget.toLocaleString()}</b> budget by <b>PKR ${(totalSpent - totalBudget).toLocaleString()}</b>!`;
+            
+            // Check WHICH categories are overspent
+            catContainer.innerHTML = '';
+            const overspentNames = [];
+            categories.forEach(cat => {
+                if (spent[cat] > budgets[cat]) {
+                    overspentNames.push(cat);
+                    const badge = document.createElement('span');
+                    badge.className = "px-3 py-1 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 text-xs font-bold rounded-full border border-red-200 dark:border-red-800";
+                    badge.innerText = `⚠️ Over: ${cat}`;
+                    catContainer.appendChild(badge);
+                }
+            });
+
+            // Fetch Profile-Aware AI suggestions
+            try {
+                const profileStr = `Profile: ${profile.living}, ${profile.family}, transport: ${profile.transport}, extra: ${profile.additionalInfo || 'none'}.`;
+                const prompt = `I overspent! Budget: ${totalBudget}, Spent: ${totalSpent}. Categories over budget: ${overspentNames.join(', ')}. ${profileStr} Give 3 realistic, specific Pakistani tips to cut costs based on this profile.`;
+                
+                const aiResp = await fetch(`${BACKEND_URL}/ask-ai`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: prompt })
+                });
+                const aiData = await aiResp.json();
+                adviceContent.innerHTML = aiData.answer || "Focus on essential needs only for the next 2 weeks.";
+            } catch (err) {
+                adviceContent.innerText = "Monitor food and entertainment spending. Avoid non-essential shopping.";
+            }
+        } else {
+            alertBox.classList.add("hidden");
+        }
+
+    } catch (e) {
+        console.warn("Backend not reachable or error fetching dashboard data.", e);
+    }
+}
+loadFinancialData();
+
+function formatExpenseDate(value) {
+    if (!value) return '-';
+    const date = new Date(value.replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+}
+
+async function loadRecentExpenses() {
+    const emptyEl = document.getElementById('recentExpensesEmpty');
+    const tableEl = document.getElementById('recentExpensesTable');
+    const bodyEl = document.getElementById('recentExpensesBody');
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/recent-expenses?email=${encodeURIComponent(profile.email)}&limit=8`);
+        const data = await response.json();
+        const rows = data.expenses || [];
+
+        bodyEl.innerHTML = '';
+        if (!rows.length) {
+            emptyEl.classList.remove('hidden');
+            tableEl.classList.add('hidden');
+            return;
+        }
+
+        rows.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-gray-100 dark:border-slate-700/70';
+            tr.innerHTML = `
+                <td class="py-3 pr-4 font-medium">${item.category || '-'}<\/td>
+                <td class="py-3 pr-4 text-gray-500">${item.description || '-'}<\/td>
+                <td class="py-3 pr-4 font-bold">PKR ${(item.amount || 0).toLocaleString()}<\/td>
+                <td class="py-3 text-[10px] text-gray-400">${formatExpenseDate(item.timestamp)}<\/td>
+            `;
+            bodyEl.appendChild(tr);
+        });
+
+        emptyEl.classList.add('hidden');
+        tableEl.classList.remove('hidden');
+    } catch (error) {
+        console.warn('Unable to load recent expenses', error);
+        emptyEl.textContent = 'Unable to load recent expenses right now.';
+        emptyEl.classList.remove('hidden');
+        tableEl.classList.add('hidden');
+    }
+}
+
+loadRecentExpenses();
+
+// Theme update listener
+document.getElementById('themeToggle').addEventListener('click', () => {
+    setTimeout(() => {
+        const isDarkNow = document.documentElement.classList.contains('dark');
+        const color = isDarkNow ? '#94a3b8' : '#64748b';
+        chart.options.plugins.legend.labels.color = color;
+        chart.options.scales.y.ticks.color = color;
+        chart.options.scales.x.ticks.color = color;
+        chart.options.scales.y.grid.color = isDarkNow ? '#334155' : '#e2e8f0';
+        chart.update();
+    }, 50);
+});
+</script>
+<script src="theme.js"></script>
+</body>
+</html>
