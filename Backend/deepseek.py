@@ -1,14 +1,14 @@
-import 'dotenv/config';
+import os
 import requests
 
-process.env.API_KEY
+API_KEY = os.getenv("API_KEY")
 
 
 def ask_ai(question):
     url = "https://api.deepseek.com/v1/chat/completions"
 
     headers = {
-        "Authorization": f"Bearer {process.env.API_KEY}",
+        "Authorization": f"Bearer {API_KEY}",,
         "Content-Type": "application/json"
     }
 
